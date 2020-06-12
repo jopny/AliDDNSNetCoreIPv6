@@ -1,0 +1,11 @@
+﻿################################################################################
+# 此 .gitignore 文件已由 Microsoft(R) Visual Studio 自动创建。
+################################################################################
+
+/AliDDNSNet/obj/Release/netcoreapp2.1
+/AliDDNSNet/obj
+/AliDDNSNet/bin
+/AliDDNSNet/Properties/PublishProfiles
+/.vs/AliDDNSNet
+.vs/slnx.sqlite
+.vs/AliDDNSNetCoreIPv6/v16/.suo

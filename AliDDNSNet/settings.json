@@ -1,0 +1,20 @@
+{
+  //获取外网IP服务
+  "IPv4Primary": "http://ipv4.vm1.test-ipv6.com/ip/?callback=?",
+  "IPv4Second": "http://ipv4.vm2.test-ipv6.com/ip/?callback=?",
+  "IPv6Primary": "http://ipv6.vm1.test-ipv6.com/ip/?callback=?",
+  "IPv6Second": "http://ipv6.vm2.test-ipv6.com/ip/?callback=?",
+
+  // 阿里云的 Access Id
+  "access_id": "xx",
+  // 阿里云的 Access Key
+  "access_key": "xxx",
+  // TTL 时间
+  "interval": 600,
+  // 主域名
+  "domain": "xx.cn",
+  // 子域名前缀
+  "sub_domain": "ipv6",
+  // 记录类型,可选的值：A, AAAA, *
+  "type": "A"
+}
