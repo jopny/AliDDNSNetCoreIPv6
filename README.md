@@ -50,6 +50,6 @@ AliDDNSNetCoreIPv6 是基于 .NET Core 开发的动态 DNS 解析工具，借助
 
 ## 2.下载地址
 
-程序打包了 Linux-x64 与 Linux arm 环境的二进制可执行文件，你可以直接下载对应的压缩包解压到你的路由器或者 NAS 里面进行运行。
+Windows，Linux
 
 如果你的设备支持 Docker 环境，建议通过 Docker 运行 .NET Core 3.1 环境来执行本程序。
