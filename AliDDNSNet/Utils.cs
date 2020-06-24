@@ -137,7 +137,8 @@ namespace AliDDNSNet
                         //var myInfo = JsonConvert.DeserializeObject<dynamic>(JsonStr.Replace("?(", "").Replace(")", ""));
                         //return myInfo.address;
                         var myIP = JObject.Parse(JsonStr.Replace("callback(", "").Replace(")", ""));
-                        return myIP["ip"].Value<string>();                        
+
+                        return myIP["ip"].Value<string>().Split(',')[0];
                     }
                 }
             }
