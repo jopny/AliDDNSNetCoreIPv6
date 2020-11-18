@@ -12,8 +12,10 @@ namespace AliDDNSNet
     {
         static async Task<int> Main(string[] args)
         {
-            var app = new CommandLineApplication();
-            app.Name = "AliDDNSNet";
+            var app = new CommandLineApplication
+            {
+                Name = "AliDDNSNet"
+            };
             app.HelpOption("-?|-h|--help");
 
             var attachments = app.Option("-f|--file <FILE>", "配置文件路径.", CommandOptionType.SingleValue);
