@@ -6,6 +6,7 @@
 /AliDDNSNet/obj
 /AliDDNSNet/bin
 /AliDDNSNet/Properties/PublishProfiles
+/.vs
 /.vs/AliDDNSNet
 .vs/slnx.sqlite
 .vs/AliDDNSNetCoreIPv6/v16/.suo

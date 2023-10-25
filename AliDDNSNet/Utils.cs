@@ -148,7 +148,7 @@ namespace AliDDNSNet
         /// 读取配置文件
         /// </summary>
         /// <param name="filePath">配置文件路径</param>
-        public static async Task<ConfigurationClass> ReadConfigFile(string filePath)
+        public static async Task<ConfigurationClass> ReadConfigFileAsync(string filePath)
         {
             using (var fs = File.Open(filePath, FileMode.Open, FileAccess.Read))
             {
