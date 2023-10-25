@@ -45,11 +45,11 @@ AliDDNSNetCoreIPv6 是基于 .NET Core 开发的动态 DNS 解析工具，借助
 当然如果你有其他的配置文件也可以通过指定 ```-f``` 参数来制定配置文件路径。例如：
 
 ```shell
-./AliDDNSNet -f ./settings.json3
+./AliDDNSNet -f ./settings1.json
 ```
 
 ## 2.下载地址
 
 Windows，Linux
 
-如果你的设备支持 Docker 环境，建议通过 Docker 运行 .NET Core 3.1 环境来执行本程序。
+如果你的设备支持 Docker 环境，建议通过 Docker 运行 .NET Core 7.0 环境来执行本程序。
