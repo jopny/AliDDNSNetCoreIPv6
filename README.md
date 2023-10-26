@@ -2,6 +2,13 @@
 
 AliDDNSNetCoreIPv6 是基于 .NET Core 开发的动态 DNS 解析工具，借助于阿里云的 DNS API 来实现域名与动态 IP 的绑定功能。这样你随时就可以通过域名来访问你的设备，而不需要担心 IP 变动的问题。阿里云DNS支持IPv6的AAAA记录，本项目可同时修改A记录和AAAA记录。
 
+类似工具对比
+| Tools              | IPv4                | IPv6                        | Memo                                                                          |
+|--------------------|---------------------|-----------------------------|-------------------------------------------------------------------------------|
+| OpenWRT/PANDAVA    | Router IPv4 Address | Route IPv6 Address          | For Router, Is ok                                                             |
+| USB Module ESP8266 | Router IPv4 Address | ESP8266 IPv6 Address        |  If you have some servers in the same local network, you want each server's   |
+| AliDDNSNetIPv6     | Router IPv4 Address | Current Device IPv6 Address |ipv6 is update to your domain name, you need AliDDNSNetIPv6.                   |
+
 ## 1.使用说明
 
 > 使用本工具的时候，请详细阅读使用说明。
