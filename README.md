@@ -47,8 +47,8 @@ AliDDNSNetCoreIPv6 是基于 .NET Core 开发的动态 DNS 解析工具，借助
 ```shell
 ./AliDDNSNet -f ./settings1.json
 ```
-### 1.# Change Log
-1. Updated to .NetCore 7.0
+### 1.3 Change Log
+1. Updated to .Ne tCore 7.0
 2. Replace outdated Microsoft.Extensions.CommandLineUtils to McMaster.Extensions.CommandLineUtils;
 3. Update error handling mechanism.
 ## 2.下载地址
