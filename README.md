@@ -60,6 +60,9 @@ AliDDNSNetCoreIPv6 是基于 .NET Core 开发的动态 DNS 解析工具，借助
 3. Update error handling mechanism.
 ## 2.下载地址
 
-Windows，Linux
+[Windows](https://github.com/jopny/AliDDNSNetCoreIPv6/releases/download/v0.2.0/AliDDNSNetCoreIPv6-0.2.0.zip)，Linux
 
 如果你的设备支持 Docker 环境，建议通过 Docker 运行 .NET Core 7.0 环境来执行本程序。
+
+感谢:
+https://github.com/real-zony/AliDDNSNet
