@@ -4,7 +4,10 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +17,7 @@ namespace AliDDNSNet
 {
     public static class Utils
     {
-        public static ConfigurationClass config { get; set; }
+        public static ConfigurationClass Config { get; set; }
 
         /// <summary>
         /// 生成请求签名
@@ -29,7 +32,7 @@ namespace AliDDNSNet
             signStr = signStr.Replace("%2f", "%2F").Replace("%3d", "%3D").Replace("%2b", "%2B")
                 .Replace("%253a", "%253A");
 
-            var hmac = new HMACSHA1(Encoding.UTF8.GetBytes($"{config.access_key}&"));
+            var hmac = new HMACSHA1(Encoding.UTF8.GetBytes($"{Config.access_key}&"));
             return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(signStr)));
         }
 
@@ -43,9 +46,9 @@ namespace AliDDNSNet
             var sb = new StringBuilder();
             foreach (var kvp in parameters)
             {
-                sb.Append("&");
+                sb.Append('&');
                 sb.Append(HttpUtility.UrlEncode(kvp.Key));
-                sb.Append("=");
+                sb.Append('=');
                 sb.Append(HttpUtility.UrlEncode(kvp.Value));
             }
 
@@ -70,7 +73,7 @@ namespace AliDDNSNet
             var dict = new SortedDictionary<string, string>(StringComparer.Ordinal)
             {
                 {"Format", "json"},
-                {"AccessKeyId", config.access_id},
+                {"AccessKeyId", Config.access_id},
                 {"SignatureMethod", "HMAC-SHA1"},
                 {"SignatureNonce", Guid.NewGuid().ToString()},
                 {"Version", "2015-01-09"},
@@ -123,6 +126,10 @@ namespace AliDDNSNet
         /// 获得当前机器的公网(IPv6/IPv4)
         /// http://v4.ipv6-test.com/json/widgetdata.php?callback=?
         /// http://v6.ipv6-test.com/json/widgetdata.php?callback=?
+        /// 错误处理：
+        //1. DNS解析不到：请求的名称有效，但是找不到请求的类型的数据。 (ipv6.vm3.test-ipv6.com:80)
+        //2. 打不开网页，超时
+        //3. 返回的页面不是预期内容，出现json解析错误
         /// </summary>
         public static async Task<string> GetCurentPublicIP(string sUrl)
         {
@@ -157,6 +164,46 @@ namespace AliDDNSNet
                     return JsonConvert.DeserializeObject<ConfigurationClass>(await read.ReadToEndAsync());
                 }
             }
+        }
+
+        public static string GetLocalIPAddress()
+        {
+            string CurIP = "";
+            // 获取所有网络适配器
+            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+
+            // 遍历每个网络适配器
+            foreach (NetworkInterface adapter in adapters.Where(p =>p.OperationalStatus is OperationalStatus.Up && p.NetworkInterfaceType != NetworkInterfaceType.Loopback))
+            {
+                Console.WriteLine($"{adapter.Description},MAC:{adapter.GetPhysicalAddress()},{adapter.NetworkInterfaceType},{adapter.OperationalStatus}");
+                // 获取 IP 地址列表
+                foreach (UnicastIPAddressInformation address in adapter.GetIPProperties().UnicastAddresses.Where(p => !IPAddress.IsLoopback(p.Address)))
+                {
+                    Console.WriteLine($"   {address.Address},{address.Address.AddressFamily}," +
+                        $"{address.Address.IsIPv6LinkLocal}");
+                    if(address.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                    {
+                        string[] parts = address.Address.ToString().Split('%');
+                        CurIP = parts[0];
+                        break;
+                    }
+                }
+            }
+            return CurIP;
+            //NetworkInterface.GetAllNetworkInterfaces()
+            //    .SelectMany(i => i.GetIPProperties().UnicastAddresses)
+            //    //.Select(a => a.Address)
+            //    .Where(p => p.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 && !System.Net.IPAddress.IsLoopback(p.Address))
+            //.ToList()
+            //.ForEach(adapter => Console.WriteLine($"IP:{adapter.Address}"));
+
+            //var MyIP = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+            //  .Select(p => p.GetIPProperties())
+            //  .SelectMany(p => p.UnicastAddresses)
+            //  .Where(p => p.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 && !System.Net.IPAddress.IsLoopback(p.Address))
+
+            //  .FirstOrDefault()?.Address.ToString();
+            //Console.WriteLine("MyIP:"+MyIP);
         }
     }
 }

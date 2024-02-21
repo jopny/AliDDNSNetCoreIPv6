@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 
 namespace AliDDNSNet
@@ -38,13 +40,26 @@ namespace AliDDNSNet
                 Console.WriteLine("配置文件：" + filePath);
 
                 var config = await Utils.ReadConfigFileAsync(filePath);
-                Console.WriteLine("待更新域名。" + config.domain);
-                Utils.config = config;
+                Console.WriteLine("待更新域名：" + config.domain);
+                Utils.Config = config;
                 #endregion
 
+
+
                 //通过API获取子域名的解析记录列表
-                var subDomains = JObject.Parse(await Utils.SendGetRequest(new DescribeDomainRecordsRequest(config.domain,config.sub_domain)));
-                Console.WriteLine("" + subDomains);
+                JObject subDomains;
+                try
+                {
+                    subDomains = JObject.Parse(await Utils.SendGetRequest(new DescribeDomainRecordsRequest(config.domain, config.sub_domain)));
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine($"通过API获取子域名信息出错，请检查网络链接：{ex.Message}");
+                    return;
+                }
+                
+                //Console.WriteLine("" + subDomains);
+
                 /*失败提示1：Access_ID错误
                  * {
                         "RequestId": "0B12DE1A-2304-5E86-AAFD-B0206BDECD01",
@@ -85,7 +100,6 @@ namespace AliDDNSNet
                     Console.WriteLine("" + subDomains["Message"]);
                     return;
                 }
-                //Console.WriteLine("" + subDomains["Message"]);
                 //如果同时配置有IPv6+Ipv4记录时的处理
                 //字符串前$为字符串插值
                 //字符串内为：SelectToken with JSONPath，帮助： https://www.newtonsoft.com/json/help/html/SelectToken.htm
@@ -95,7 +109,7 @@ namespace AliDDNSNet
                     return;
                 }
 
-                Console.WriteLine("已经找到对应的域名与解析");
+                //Console.WriteLine("已经找到对应的域名与解析");
                 Console.WriteLine("======================");
                 Console.WriteLine($"子域名:{config.sub_domain}.{config.domain}");
 
@@ -110,77 +124,153 @@ namespace AliDDNSNet
 
                     // 更新IPv6
                     if (item["Type"].ToString() == "AAAA" && (config.type == "AAAA" || config.type == "*"))   
-                    {                        
-                        try
+                    {
+                        var currentIP = "";
+                        if(string.IsNullOrEmpty(currentIP))
                         {
-                            //http://ipv6.vm0.test-ipv6.com/ip/?callback=?                            
-                            var currentIP = (await Utils.GetCurentPublicIP(Utils.config.IPv6Primary));
-
-                            if (currentIP == dnsIp)
+                            try
                             {
-                                Console.WriteLine("    解析地址与当前主机 IP 地址一致，无需更改.");                                
+                                currentIP = await Utils.GetCurentPublicIP(Utils.Config.IPv6Primary);
+                                Console.WriteLine($"从主服务器获取IPv6本地地址成功，{currentIP}");
                             }
-                            else
+                            catch(Exception ex)
                             {
-                                Console.WriteLine("    检测到 IP 地址不一致，正在更改中......");
-                                var rrId = item["RecordId"].Value<string>();
+                                Console.WriteLine($"从主服务器获取IPv6本地地址出错了：{ex.Message}");
+                            }
+                        }
+                        if (string.IsNullOrEmpty(currentIP))
+                        {
+                            try
+                            {
+                                currentIP = await Utils.GetCurentPublicIP(Utils.Config.IPv6Second);
+                                Console.WriteLine($"从辅助服务器获取IPv6本地地址成功，{currentIP}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"从辅助服务器获取IPv6本地地址出错了：{ex.Message}");
+                            }
+                        }
+                        if (string.IsNullOrEmpty(currentIP))
+                        {
+                            try
+                            {
+                                currentIP = Utils.GetLocalIPAddress();
+                                Console.WriteLine($"从网卡获取IPv6本地地址成功：{currentIP}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"从网卡获取IPv6本地地址出错了：{ex.Message}");
+                            }
+                        }
+                        //更新DNS AAAA记录(IPv6)
+                        if (!string.IsNullOrEmpty(currentIP))
+                        {
+                            try
+                            {
+                                //http://ipv6.vm0.test-ipv6.com/ip/?callback=?                              
 
-                                var response = await Utils.SendGetRequest(new UpdateDomainRecordRequest(rrId, config.sub_domain, item["Type"].Value<string>(), currentIP, config.interval.ToString()));
-
-                                var resultRRId = JObject.Parse(response).SelectToken("$.RecordId").Value<string>();
-
-                                if (resultRRId == null || resultRRId != rrId)
+                                if (currentIP == dnsIp)
                                 {
-                                    Console.WriteLine($"    更改{config.type}记录失败，请稍后再试。");
+                                    Console.WriteLine("    解析地址与当前主机 IP 地址一致，无需更改.");                                
                                 }
                                 else
                                 {
-                                    Console.WriteLine($"    更改{config.type}记录成功。新IP:{currentIP}");
+                                    Console.WriteLine($"    检测到 IP 地址不一致，正在更改中......");
+                                    var rrId = item["RecordId"].Value<string>();
+
+                                    var response = await Utils.SendGetRequest(new UpdateDomainRecordRequest(rrId, config.sub_domain, item["Type"].Value<string>(), currentIP, config.interval.ToString()));
+
+                                    var resultRRId = JObject.Parse(response).SelectToken("$.RecordId").Value<string>();
+
+                                    if (resultRRId == null || resultRRId != rrId)
+                                    {
+                                        Console.WriteLine($"    更改AAAA记录失败，请稍后再试。");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"    更改AAAA记录成功。新IP:{currentIP}");
+                                    }
                                 }
                             }
+                            catch(Exception e)
+                            {
+                                Console.WriteLine($"IPv6-AAAA地址更新出错了：{e.Message}");
+                            }
                         }
-                        catch(Exception e)
+                        else
                         {
-                            Console.WriteLine("IPv6-AAAA地址出错了：" + e.Message);
+                            Console.WriteLine("currentIPv6为空，未更新DNS AAAA记录");
                         }
 
                     }
-                    else if(item["Type"].ToString() == "A" && (config.type == "A" || config.type == "*"))
+                    // 更新IPv4
+                    else if (item["Type"].ToString() == "A" && (config.type == "A" || config.type == "*"))
                     {
-                        try
+                        var currentIP = "";
+                        if(string.IsNullOrEmpty(currentIP)) 
                         {
-                            //获取公网IP服务可能故障，转移到配置中，以便调整
-                            //http://ipv4.vm0.test-ipv6.com/ip/?callback=?
-                            var currentIP = (await Utils.GetCurentPublicIP(Utils.config.IPv4Primary));
-
-                            if (currentIP == dnsIp)
+                            try
                             {
-                                Console.WriteLine("    解析地址与当前主机 IP 地址一致，无需更改.");
+                                currentIP = await Utils.GetCurentPublicIP(Utils.Config.IPv4Primary);
+                                Console.WriteLine($"从主服务器获取IPv4本地地址成功，{currentIP}");
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                Console.WriteLine("    检测到 IP 地址不一致，正在更改中......");
-                                //var rrId = subDomains.SelectToken($"$.DomainRecords.Record[?(@.RR == '{config.sub_domain}')].RecordId").Value<string>();
-                                var rrId = item["RecordId"].Value<string>();
-                        
-                                var response = await Utils.SendGetRequest(new UpdateDomainRecordRequest(rrId, config.sub_domain, item["Type"].Value<string>(), currentIP, config.interval.ToString()));
-
-                                var resultRRId = JObject.Parse(response).SelectToken("$.RecordId").Value<string>();
-
-                                if (resultRRId == null || resultRRId != rrId)
+                                Console.WriteLine($"从主服务器获取IPv4本地地址出错了：{ex.Message}");
+                            }
+                        }
+                        if (string.IsNullOrEmpty(currentIP))
+                        {
+                            try
+                            {
+                                currentIP = await Utils.GetCurentPublicIP(Utils.Config.IPv4Second);
+                                Console.WriteLine($"从辅助服务器获取IPv4本地地址成功，{currentIP}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"从辅助服务器获取IPv4本地地址出错了：{ex.Message}");
+                            }
+                        }
+                        //更新DNS A记录(IPv4)
+                        if (!string.IsNullOrEmpty(currentIP))   
+                        {
+                            try
+                            {
+                                if (currentIP == dnsIp)
                                 {
-                                    Console.WriteLine($"    更改{config.type}记录失败，请稍后再试。");
+                                    Console.WriteLine("    解析地址与当前主机 IP 地址一致，无需更改.");
                                 }
                                 else
                                 {
-                                    Console.WriteLine($"    更改{config.type}记录成功。新IP:{currentIP}");
+                                    Console.WriteLine("    检测到 IP 地址不一致，正在更改中......");
+                                    //var rrId = subDomains.SelectToken($"$.DomainRecords.Record[?(@.RR == '{config.sub_domain}')].RecordId").Value<string>();
+                                    var rrId = item["RecordId"].Value<string>();
+                        
+                                    var response = await Utils.SendGetRequest(new UpdateDomainRecordRequest(rrId, config.sub_domain, item["Type"].Value<string>(), currentIP, config.interval.ToString()));
+
+                                    var resultRRId = JObject.Parse(response).SelectToken("$.RecordId").Value<string>();
+
+                                    if (resultRRId == null || resultRRId != rrId)
+                                    {
+                                        Console.WriteLine($"    更改A记录失败，请稍后再试。");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"    更改A记录成功。新IP:{currentIP}");
+                                    }
                                 }
+
+                            }
+                            catch(Exception e)
+                            {
+                                Console.WriteLine("IPv4-A地址更新出错了：" + e.Message);
                             }
                         }
-                        catch(Exception e)
+                        else
                         {
-                            Console.WriteLine("IPv4-A地址出错了：" + e.Message);
+                            Console.WriteLine("currentIPv4为空，未更新DNS A记录");
                         }
+
                     }
                 }
                 return ;
