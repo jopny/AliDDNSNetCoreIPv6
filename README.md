@@ -55,11 +55,11 @@ AliDDNSNetCoreIPv6 是基于 .NET Core 开发的动态 DNS 解析工具，借助
 ./AliDDNSNet -f ./settings1.json
 ```
 
-### 1.4 Change Log
+### 0.3.0 Change Log
 1. Updated to .Net 8.0
 2. Improve error catching process
-3. 
-### 1.3 Change Log
+
+### 0.2.0 Change Log
 1. Updated to .Net 7.0
 2. Replace outdated Microsoft.Extensions.CommandLineUtils to McMaster.Extensions.CommandLineUtils;
 3. Update error handling mechanism.
