@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -17,7 +18,7 @@ namespace AliDDNSNet
 {
     public static class Utils
     {
-        public static ConfigurationClass Config { get; set; }
+        public static ConfigurationClass? Config { get; set; }
 
         /// <summary>
         /// 生成请求签名
@@ -32,7 +33,7 @@ namespace AliDDNSNet
             signStr = signStr.Replace("%2f", "%2F").Replace("%3d", "%3D").Replace("%2b", "%2B")
                 .Replace("%253a", "%253A");
 
-            var hmac = new HMACSHA1(Encoding.UTF8.GetBytes($"{Config.access_key}&"));
+            var hmac = new HMACSHA1(Encoding.UTF8.GetBytes($"{Config?.access_key}&"));
             return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(signStr)));
         }
 
@@ -52,7 +53,7 @@ namespace AliDDNSNet
                 sb.Append(HttpUtility.UrlEncode(kvp.Value));
             }
 
-            return sb.ToString().Substring(1);
+            return sb.ToString()[1..];
         }
 
         /// <summary>
@@ -73,7 +74,7 @@ namespace AliDDNSNet
             var dict = new SortedDictionary<string, string>(StringComparer.Ordinal)
             {
                 {"Format", "json"},
-                {"AccessKeyId", Config.access_id},
+                {"AccessKeyId", Config?.access_id??""},
                 {"SignatureMethod", "HMAC-SHA1"},
                 {"SignatureNonce", Guid.NewGuid().ToString()},
                 {"Version", "2015-01-09"},
@@ -92,17 +93,11 @@ namespace AliDDNSNet
             var sign = request.Parameters.BuildRequestString().GenerateSignature();
             var postUri = $"http://alidns.aliyuncs.com/?{request.Parameters.AppendSignature(sign)}";
 
-            using (var client = new HttpClient())
-            {
-                client.Timeout = TimeSpan.FromSeconds(5);
-                using (var resuest = new HttpRequestMessage(HttpMethod.Get, postUri))
-                {
-                    using (var response = await client.SendAsync(resuest))
-                    {
-                        return await response.Content.ReadAsStringAsync();
-                    }
-                }
-            }
+            using var client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(5);
+            using var resuest = new HttpRequestMessage(HttpMethod.Get, postUri);
+            using var response = await client.SendAsync(resuest);
+            return await response.Content.ReadAsStringAsync();
         }
 
         /// <summary>
@@ -110,16 +105,10 @@ namespace AliDDNSNet
         /// </summary>
         public static async Task<string> GetCurentPublicIPv4()
         {
-            using (var client = new HttpClient())
-            {
-                using (var resuest = new HttpRequestMessage(HttpMethod.Get, "http://members.3322.org/dyndns/getip"))
-                {
-                    using (var response = await client.SendAsync(resuest))
-                    {
-                        return await response.Content.ReadAsStringAsync();
-                    }
-                }
-            }
+            using var client = new HttpClient();
+            using var resuest = new HttpRequestMessage(HttpMethod.Get, "http://members.3322.org/dyndns/getip");
+            using var response = await client.SendAsync(resuest);
+            return await response.Content.ReadAsStringAsync();
         }
 
         /// <summary>
@@ -131,39 +120,29 @@ namespace AliDDNSNet
         //2. 打不开网页，超时
         //3. 返回的页面不是预期内容，出现json解析错误
         /// </summary>
-        public static async Task<string> GetCurentPublicIP(string sUrl)
+        public static async Task<string?> GetCurentPublicIP(string? sUrl)
         {
-            using (var client = new HttpClient())
-            {
-                client.Timeout = TimeSpan.FromSeconds(5);
-                using (var resuest = new HttpRequestMessage(HttpMethod.Get, sUrl)) //待处理本地没有IPv6地址时的提示信息
-                {
-                    using (var response = await client.SendAsync(resuest))
-                    {
-                        string JsonStr = await response.Content.ReadAsStringAsync();
-                        //var myInfo = JsonConvert.DeserializeObject<dynamic>(JsonStr.Replace("?(", "").Replace(")", ""));
-                        //return myInfo.address;
-                        var myIP = JObject.Parse(JsonStr.Replace("callback(", "").Replace(")", ""));
+            using var client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(5);
+            using var resuest = new HttpRequestMessage(HttpMethod.Get, sUrl); //待处理本地没有IPv6地址时的提示信息
+            using var response = await client.SendAsync(resuest);
+            string JsonStr = await response.Content.ReadAsStringAsync();
+            //var myInfo = JsonConvert.DeserializeObject<dynamic>(JsonStr.Replace("?(", "").Replace(")", ""));
+            //return myInfo.address;
+            var myIP = JObject.Parse(JsonStr.Replace("callback(", "").Replace(")", ""));
 
-                        return myIP["ip"].Value<string>().Split(',')[0];
-                    }
-                }
-            }
+            return (myIP["ip"]?.Value<string>()??"").Split(',')[0];
         }
 
         /// <summary>
         /// 读取配置文件
         /// </summary>
         /// <param name="filePath">配置文件路径</param>
-        public static async Task<ConfigurationClass> ReadConfigFileAsync(string filePath)
+        public static async Task<ConfigurationClass?> ReadConfigFileAsync(string filePath)
         {
-            using (var fs = File.Open(filePath, FileMode.Open, FileAccess.Read))
-            {
-                using (var read = new StreamReader(fs))
-                {
-                    return JsonConvert.DeserializeObject<ConfigurationClass>(await read.ReadToEndAsync());
-                }
-            }
+            using var fs = File.Open(filePath, FileMode.Open, FileAccess.Read);
+            using var read = new StreamReader(fs);
+            return JsonConvert.DeserializeObject<ConfigurationClass?>(await read.ReadToEndAsync());
         }
 
         public static string GetLocalIPAddress()
@@ -205,5 +184,21 @@ namespace AliDDNSNet
             //  .FirstOrDefault()?.Address.ToString();
             //Console.WriteLine("MyIP:"+MyIP);
         }
+
+        public static bool IsIPv6(string? InStr)
+        {
+            string ipv6Regex = @"^((([0-9a-fA-F]{0,4})(:[0-9a-fA-F]{0,4})*)?)::((([0-9a-fA-F]{0,4})(:[0-9a-fA-F]{0,4})*)?)$";
+
+            // 验证是否匹配
+            return Regex.IsMatch(InStr??"", ipv6Regex);
+        }
+        public static bool IsIPv4(string? InStr)
+        {
+            string ipv4Regex = @"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"; 
+
+            // 验证是否匹配
+            return Regex.IsMatch(InStr ?? "", ipv4Regex);
+        }
+
     }
 }
