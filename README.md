@@ -20,9 +20,9 @@ AliDDNSNetCoreIPv6 是基于 .NET Core 开发的动态 DNS 解析工具，借助
 ```json
 {
   //获取外网IP服务,考虑到外部服务可能因终端而需要更换
-  "IPv4Primary": "http://ipv4.vm1.test-ipv6.com/ip/?callback=?",
+  "IPv4Primary": "http://ipv4.vm3.test-ipv6.com/ip/?callback=?",
   "IPv4Second": "http://ipv4.vm2.test-ipv6.com/ip/?callback=?",
-  "IPv6Primary": "http://ipv6.vm1.test-ipv6.com/ip/?callback=?",
+  "IPv6Primary": "http://ipv6.vm3.test-ipv6.com/ip/?callback=?",
   "IPv6Second": "http://ipv6.vm2.test-ipv6.com/ip/?callback=?",
   // 阿里云的 Access Id
   "access_id": "",
@@ -54,10 +54,16 @@ AliDDNSNetCoreIPv6 是基于 .NET Core 开发的动态 DNS 解析工具，借助
 ```shell
 ./AliDDNSNet -f ./settings1.json
 ```
-### 1.3 Change Log
-1. Updated to .Ne tCore 7.0
+
+### 0.3.0 Change Log
+1. Updated to .Net 8.0
+2. Improve error catching process
+
+### 0.2.0 Change Log
+1. Updated to .Net 7.0
 2. Replace outdated Microsoft.Extensions.CommandLineUtils to McMaster.Extensions.CommandLineUtils;
 3. Update error handling mechanism.
+
 ## 2.下载地址
 
 [Windows](https://github.com/jopny/AliDDNSNetCoreIPv6/releases/download/v0.2.0/AliDDNSNetCoreIPv6-0.2.0.zip)，Linux
