@@ -1,8 +1,8 @@
 {
   //获取外网IP服务
-  "IPv4Primary": "http://ipv4.vm1.test-ipv6.com/ip/?callback=?",
+  "IPv4Primary": "http://ipv4.vm3.test-ipv6.com/ip/?callback=?",
   "IPv4Second": "http://ipv4.vm2.test-ipv6.com/ip/?callback=?",
-  "IPv6Primary": "http://ipv6.vm1.test-ipv6.com/ip/?callback=?",
+  "IPv6Primary": "http://ipv6.vm3.test-ipv6.com/ip/?callback=?",
   "IPv6Second": "http://ipv6.vm2.test-ipv6.com/ip/?callback=?",
 
   // 阿里云的 Access Id
