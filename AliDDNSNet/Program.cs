@@ -182,10 +182,10 @@ namespace AliDDNSNet
                             }
                             catch(Exception e)
                             {
-                                Console.WriteLine($"IPv6-AAAA地址更新出错了：{e.Message}");
+                                Console.WriteLine($"    IPv6-AAAA地址更新出错了：{e.Message}");
                             }
                         }
-                        else Console.WriteLine("currentIPv6为空，未更新DNS AAAA记录");
+                        else Console.WriteLine("    currentIPv6为空或格式错误，未更新DNS AAAA记录");
                     }
                     // 更新IPv4
                     else if (item["Type"]?.ToString() == "A" && (config.type == "A" || config.type == "*"))
@@ -235,10 +235,10 @@ namespace AliDDNSNet
                             }
                             catch(Exception e)
                             {
-                                Console.WriteLine("IPv4-A地址更新出错了：" + e.Message);
+                                Console.WriteLine("    IPv4-A地址更新出错了：" + e.Message);
                             }
                         }
-                        else Console.WriteLine("currentIPv4为空或格式错误，未更新DNS A记录");
+                        else Console.WriteLine("    currentIPv4为空或格式错误，未更新DNS A记录");
                     }
                 }
                 return ;
